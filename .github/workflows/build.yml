@@ -1,0 +1,54 @@
+name: Build & Push Base Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "docker/**"
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: fer-ri/php-devcontainer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        php: ["7.4", "8.5"]
+        target: [base, dev, ci]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve Node image for PHP version
+        id: node
+        run: |
+          if [ "${{ matrix.php }}" = "7.4" ]; then
+            echo "image=node:18-alpine3.16" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=node:24-alpine" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: |
+            PHP_VERSION=${{ matrix.php }}
+            NODE_IMAGE=${{ steps.node.outputs.image }}
+          target: ${{ matrix.target }}
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php }}-${{ matrix.target }}
