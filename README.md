@@ -26,7 +26,8 @@ What each target contains:
 
 ```bash
 docker login ghcr.io
-./build.sh
+./build.sh          # build only (safe, no push)
+./build.sh --push   # build & push to GHCR
 ```
 
 `build.sh` builds and pushes every `php` × `target` combination (amd64 only).

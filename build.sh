@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PUSH=false
+SHOW_HELP() { echo "Usage: $0 [--push]"; echo "  --push   Push images to GHCR after building (CI uses this)."; echo "  Without --push only builds locally (safe for testing)."; exit 0; }
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --push) PUSH=true ;;
+    --help|-h) SHOW_HELP ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+  shift
+done
+
 REGISTRY="ghcr.io/fer-ri"
 IMAGE="php-devcontainer"
 
@@ -27,6 +38,13 @@ for php in "${PHP_VERSIONS[@]}"; do
       --target "${target}" \
       --tag "${tag}" \
       -f Dockerfile .
-    docker push "${tag}"
+
+    if $PUSH; then
+      docker push "${tag}"
+    else
+      echo "   (skipped push, pass --push to push)"
+    fi
   done
 done
+
+$PUSH || echo ">> Dry-run complete. Re-run with --push to publish to ${REGISTRY}/${IMAGE}."
