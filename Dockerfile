@@ -3,7 +3,7 @@ ARG NODE_IMAGE=node:24-alpine
 FROM ${NODE_IMAGE} AS node_src
 FROM serversideup/php:${PHP_VERSION}-fpm-nginx-alpine AS base
 USER root
-RUN install-php-extensions bcmath intl
+RUN install-php-extensions bcmath intl exif gd
 
 FROM base AS dev
 USER root
